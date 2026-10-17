@@ -1,0 +1,434 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Off Mode在庫管理 & クラフトシミュレーター</title>
+    <!-- Tailwind CSS (スタイリング用) -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <!-- FontAwesome (アイコン用) -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <!-- Google Fonts (Inter & Noto Sans JP) -->
+    <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+JP:wght@400;500;700&display=swap" rel="stylesheet">
+    <style>
+        body {
+            font-family: 'Noto Sans JP', sans-serif;
+        }
+        /* 数値入力の矢印を非表示（見た目をスッキリさせるため） */
+        input[type="number"]::-webkit-inner-spin-button,
+        input[type="number"]::-webkit-outer-spin-button {
+            -webkit-appearance: none;
+            margin: 0;
+        }
+        input[type="number"] {
+            -moz-appearance: textfield;
+        }
+    </style>
+</head>
+<body class="bg-slate-900 text-slate-100 min-h-screen pb-12">
+
+    <!-- ヘッダー -->
+    <header class="bg-slate-800 border-b border-slate-700 sticky top-0 z-10 shadow-md">
+        <div class="max-w-5xl mx-auto px-4 py-4 flex justify-between items-center">
+            <div class="flex items-center gap-3">
+                <div class="bg-indigo-600 text-white p-2.5 rounded-xl shadow-lg shadow-indigo-500/30">
+                    <i class="fa-solid fa-boxes-stacked text-xl"></i>
+                </div>
+                <div>
+                    <h1 class="text-xl font-bold text-white tracking-wide">Off Mode在庫管理 & クラフトシミュレーター</h1>
+                    <p class="text-xs text-slate-400">素材数からクラフト可能数をリアルタイム算出</p>
+                </div>
+            </div>
+            <!-- 重宝するリセットボタン -->
+            <button onclick="resetAllStock()" class="text-xs bg-slate-700 hover:bg-rose-900/50 hover:text-rose-300 text-slate-300 px-3 py-2 rounded-lg border border-slate-600 transition flex items-center gap-1.5 active:scale-95">
+                <i class="fa-solid fa-rotate-left"></i> 全リセット
+            </button>
+        </div>
+    </header>
+
+    <!-- メインコンテンツ -->
+    <main class="max-w-5xl mx-auto px-4 mt-6 grid grid-cols-1 md:grid-cols-12 gap-6">
+
+        <!-- 左カラム：素材在庫の管理 (7列) -->
+        <section class="md:col-span-7 flex flex-col gap-4">
+            <div class="flex items-center justify-between">
+                <h2 class="text-lg font-bold text-slate-200 flex items-center gap-2">
+                    <i class="fa-solid fa-cubes text-indigo-400"></i> 素材在庫
+                </h2>
+                <span class="text-xs text-slate-400">※変更内容は自動保存されます</span>
+            </div>
+
+            <!-- 素材カード：紙 -->
+            <div class="bg-slate-800/80 border border-slate-700 rounded-2xl p-4 shadow-sm hover:border-slate-600 transition">
+                <div class="flex justify-between items-center mb-3">
+                    <div class="flex items-center gap-3">
+                        <div class="w-10 h-10 rounded-lg bg-amber-500/10 border border-amber-500/30 text-amber-400 flex items-center justify-center font-bold text-lg">
+                            <i class="fa-regular fa-file-lines"></i>
+                        </div>
+                        <div>
+                            <div class="font-bold text-slate-100">紙</div>
+                            <div class="text-xs text-slate-400">単位: 枚</div>
+                        </div>
+                    </div>
+                    <!-- 一括加減ボタン -->
+                    <div class="flex gap-1 text-xs">
+                        <button onclick="adjustStock('paper', 5)" class="px-2 py-1 bg-slate-700 hover:bg-slate-600 rounded text-slate-300 transition">+5</button>
+                        <button onclick="adjustStock('paper', 10)" class="px-2 py-1 bg-slate-700 hover:bg-slate-600 rounded text-slate-300 transition">+10</button>
+                    </div>
+                </div>
+                <div class="flex items-center gap-2">
+                    <button onclick="adjustStock('paper', -1)" class="w-12 h-12 bg-slate-700 hover:bg-slate-600 text-slate-200 rounded-xl flex items-center justify-center font-bold text-xl active:scale-95 transition">
+                        <i class="fa-solid fa-minus"></i>
+                    </button>
+                    <input type="number" id="stock-paper" min="0" value="0" oninput="updateStockFromInput('paper', this.value)" 
+                        class="w-full h-12 bg-slate-900 border border-slate-700 rounded-xl text-center text-2xl font-bold text-amber-300 focus:outline-none focus:border-indigo-500">
+                    <button onclick="adjustStock('paper', 1)" class="w-12 h-12 bg-slate-700 hover:bg-slate-600 text-slate-200 rounded-xl flex items-center justify-center font-bold text-xl active:scale-95 transition">
+                        <i class="fa-solid fa-plus"></i>
+                    </button>
+                </div>
+            </div>
+
+            <!-- 素材カード：嗜好品の詰め合わせ -->
+            <div class="bg-slate-800/80 border border-slate-700 rounded-2xl p-4 shadow-sm hover:border-slate-600 transition">
+                <div class="flex justify-between items-center mb-3">
+                    <div class="flex items-center gap-3">
+                        <div class="w-10 h-10 rounded-lg bg-teal-500/10 border border-teal-500/30 text-teal-400 flex items-center justify-center font-bold text-lg">
+                            <i class="fa-solid fa-gift"></i>
+                        </div>
+                        <div>
+                            <div class="font-bold text-slate-100">嗜好品の詰め合わせ</div>
+                            <div class="text-xs text-slate-400">単位: セット</div>
+                        </div>
+                    </div>
+                    <div class="flex gap-1 text-xs">
+                        <button onclick="adjustStock('normalGift', 5)" class="px-2 py-1 bg-slate-700 hover:bg-slate-600 rounded text-slate-300 transition">+5</button>
+                        <button onclick="adjustStock('normalGift', 10)" class="px-2 py-1 bg-slate-700 hover:bg-slate-600 rounded text-slate-300 transition">+10</button>
+                    </div>
+                </div>
+                <div class="flex items-center gap-2">
+                    <button onclick="adjustStock('normalGift', -1)" class="w-12 h-12 bg-slate-700 hover:bg-slate-600 text-slate-200 rounded-xl flex items-center justify-center font-bold text-xl active:scale-95 transition">
+                        <i class="fa-solid fa-minus"></i>
+                    </button>
+                    <input type="number" id="stock-normalGift" min="0" value="0" oninput="updateStockFromInput('normalGift', this.value)" 
+                        class="w-full h-12 bg-slate-900 border border-slate-700 rounded-xl text-center text-2xl font-bold text-teal-300 focus:outline-none focus:border-indigo-500">
+                    <button onclick="adjustStock('normalGift', 1)" class="w-12 h-12 bg-slate-700 hover:bg-slate-600 text-slate-200 rounded-xl flex items-center justify-center font-bold text-xl active:scale-95 transition">
+                        <i class="fa-solid fa-plus"></i>
+                    </button>
+                </div>
+            </div>
+
+            <!-- 素材カード：高級嗜好品の詰め合わせ -->
+            <div class="bg-slate-800/80 border border-slate-700 rounded-2xl p-4 shadow-sm hover:border-slate-600 transition">
+                <div class="flex justify-between items-center mb-3">
+                    <div class="flex items-center gap-3">
+                        <div class="w-10 h-10 rounded-lg bg-purple-500/10 border border-purple-500/30 text-purple-400 flex items-center justify-center font-bold text-lg">
+                            <i class="fa-solid fa-crown"></i>
+                        </div>
+                        <div>
+                            <div class="font-bold text-slate-100">高級嗜好品の詰め合わせ</div>
+                            <div class="text-xs text-slate-400">単位: セット</div>
+                        </div>
+                    </div>
+                    <div class="flex gap-1 text-xs">
+                        <button onclick="adjustStock('luxuryGift', 5)" class="px-2 py-1 bg-slate-700 hover:bg-slate-600 rounded text-slate-300 transition">+5</button>
+                        <button onclick="adjustStock('luxuryGift', 10)" class="px-2 py-1 bg-slate-700 hover:bg-slate-600 rounded text-slate-300 transition">+10</button>
+                    </div>
+                </div>
+                <div class="flex items-center gap-2">
+                    <button onclick="adjustStock('luxuryGift', -1)" class="w-12 h-12 bg-slate-700 hover:bg-slate-600 text-slate-200 rounded-xl flex items-center justify-center font-bold text-xl active:scale-95 transition">
+                        <i class="fa-solid fa-minus"></i>
+                    </button>
+                    <input type="number" id="stock-luxuryGift" min="0" value="0" oninput="updateStockFromInput('luxuryGift', this.value)" 
+                        class="w-full h-12 bg-slate-900 border border-slate-700 rounded-xl text-center text-2xl font-bold text-purple-300 focus:outline-none focus:border-indigo-500">
+                    <button onclick="adjustStock('luxuryGift', 1)" class="w-12 h-12 bg-slate-700 hover:bg-slate-600 text-slate-200 rounded-xl flex items-center justify-center font-bold text-xl active:scale-95 transition">
+                        <i class="fa-solid fa-plus"></i>
+                    </button>
+                </div>
+            </div>
+        </section>
+
+        <!-- 右カラム：クラフト可能数 & 制作（5列） -->
+        <section class="md:col-span-5 flex flex-col gap-4">
+            <div class="flex items-center justify-between">
+                <h2 class="text-lg font-bold text-slate-200 flex items-center gap-2">
+                    <i class="fa-solid fa-hammer text-emerald-400"></i> クラフト予測 & 制作
+                </h2>
+            </div>
+
+            <!-- 完成品1：30%回復 -->
+            <div class="bg-slate-800 border border-slate-700 rounded-2xl p-5 shadow-lg flex flex-col gap-4">
+                <div class="flex justify-between items-start">
+                    <div>
+                        <span class="inline-block px-2.5 py-0.5 rounded-full text-xs font-semibold bg-blue-500/10 text-blue-400 border border-blue-500/30 mb-1">
+                            初級クラフト
+                        </span>
+                        <h3 class="text-xl font-bold text-white flex items-center gap-2">
+                            <i class="fa-solid fa-flask text-blue-400"></i> 30%回復
+                        </h3>
+                    </div>
+                    <!-- 最大作成可能数 -->
+                    <div class="text-right">
+                        <div class="text-xs text-slate-400">作成可能</div>
+                        <div class="text-3xl font-extrabold text-blue-400" id="craftable-30">0 <span class="text-sm font-normal text-slate-300">個</span></div>
+                    </div>
+                </div>
+
+                <!-- クラフト条件 (必要素材) -->
+                <div class="bg-slate-900/60 rounded-xl p-3 text-xs space-y-1.5 border border-slate-800">
+                    <div class="text-slate-400 font-medium mb-1">【必要素材】</div>
+                    <div class="flex justify-between items-center" id="req-30-paper">
+                        <span class="text-slate-300">・紙: 1枚</span>
+                        <span class="stock-status font-bold"></span>
+                    </div>
+                    <div class="flex justify-between items-center" id="req-30-normal">
+                        <span class="text-slate-300">・嗜好品の詰め合わせ: 1個</span>
+                        <span class="stock-status font-bold"></span>
+                    </div>
+                </div>
+
+                <!-- 制作アクション -->
+                <div class="flex items-center gap-2 pt-1">
+                    <input type="number" id="craft-amount-30" min="1" value="1" class="w-16 h-10 bg-slate-900 border border-slate-700 rounded-lg text-center text-white font-bold focus:outline-none">
+                    <button onclick="craftItem('craft30')" id="btn-craft-30" class="flex-1 h-10 bg-blue-600 hover:bg-blue-500 text-white font-bold rounded-lg transition shadow-lg shadow-blue-600/20 active:scale-95 flex items-center justify-center gap-1.5 disabled:opacity-50 disabled:cursor-not-allowed">
+                        <i class="fa-solid fa-wrench"></i> 製作して在庫更新
+                    </button>
+                </div>
+            </div>
+
+            <!-- 完成品2：50%回復 -->
+            <div class="bg-slate-800 border border-slate-700 rounded-2xl p-5 shadow-lg flex flex-col gap-4">
+                <div class="flex justify-between items-start">
+                    <div>
+                        <span class="inline-block px-2.5 py-0.5 rounded-full text-xs font-semibold bg-purple-500/10 text-purple-400 border border-purple-500/30 mb-1">
+                            高級クラフト
+                        </span>
+                        <h3 class="text-xl font-bold text-white flex items-center gap-2">
+                            <i class="fa-solid fa-prescription-bottle-medical text-purple-400"></i> 50%回復
+                        </h3>
+                    </div>
+                    <!-- 最大作成可能数 -->
+                    <div class="text-right">
+                        <div class="text-xs text-slate-400">作成可能</div>
+                        <div class="text-3xl font-extrabold text-purple-400" id="craftable-50">0 <span class="text-sm font-normal text-slate-300">個</span></div>
+                    </div>
+                </div>
+
+                <!-- クラフト条件 (必要素材) -->
+                <div class="bg-slate-900/60 rounded-xl p-3 text-xs space-y-1.5 border border-slate-800">
+                    <div class="text-slate-400 font-medium mb-1">【必要素材】</div>
+                    <div class="flex justify-between items-center" id="req-50-paper">
+                        <span class="text-slate-300">・紙: 2枚</span>
+                        <span class="stock-status font-bold"></span>
+                    </div>
+                    <div class="flex justify-between items-center" id="req-50-luxury">
+                        <span class="text-slate-300">・高級嗜好品の詰め合わせ: 1個</span>
+                        <span class="stock-status font-bold"></span>
+                    </div>
+                </div>
+
+                <!-- 制作アクション -->
+                <div class="flex items-center gap-2 pt-1">
+                    <input type="number" id="craft-amount-50" min="1" value="1" class="w-16 h-10 bg-slate-900 border border-slate-700 rounded-lg text-center text-white font-bold focus:outline-none">
+                    <button onclick="craftItem('craft50')" id="btn-craft-50" class="flex-1 h-10 bg-purple-600 hover:bg-purple-500 text-white font-bold rounded-lg transition shadow-lg shadow-purple-600/20 active:scale-95 flex items-center justify-center gap-1.5 disabled:opacity-50 disabled:cursor-not-allowed">
+                        <i class="fa-solid fa-wrench"></i> 製作して在庫更新
+                    </button>
+                </div>
+            </div>
+
+            <!-- 通知メッセージ表示用のダイアログ area -->
+            <div id="toast-message" class="hidden p-3 rounded-xl bg-slate-800 border text-xs text-center font-medium transition-all duration-300"></div>
+
+        </section>
+
+    </main>
+
+    <!-- JavaScript ロジック -->
+    <script>
+        // 在庫データの初期化
+        let stocks = {
+            paper: 0,
+            normalGift: 0,
+            luxuryGift: 0
+        };
+
+        // アプリ起動時の読み込み
+        window.onload = function() {
+            loadSavedStock();
+            updateUI();
+        };
+
+        // ローカルストレージからの復元
+        function loadSavedStock() {
+            const saved = localStorage.getItem('craft_inventory_data');
+            if (saved) {
+                try {
+                    stocks = JSON.parse(saved);
+                } catch(e) {
+                    console.error('データの復元に失敗しました', e);
+                }
+            }
+        }
+
+        // 保存処理
+        function saveStock() {
+            localStorage.setItem('craft_inventory_data', JSON.stringify(stocks));
+        }
+
+        // プラス/マイナスボタンでの数値調整
+        function adjustStock(key, amount) {
+            stocks[key] = Math.max(0, (stocks[key] || 0) + amount);
+            saveStock();
+            updateUI();
+        }
+
+        // テキスト入力欄からの直接数値変更
+        function updateStockFromInput(key, value) {
+            let val = parseInt(value, 10);
+            if (isNaN(val) || val < 0) {
+                val = 0;
+            }
+            stocks[key] = val;
+            saveStock();
+            updateUI(false); // 入力フォーカスが外れないよう入力フィールド自体の値更新はスキップ
+        }
+
+        // UI全体の再描画・再計算
+        function updateUI(updateInputFields = true) {
+            // 1. 在庫数入力欄の更新
+            if (updateInputFields) {
+                document.getElementById('stock-paper').value = stocks.paper;
+                document.getElementById('stock-normalGift').value = stocks.normalGift;
+                document.getElementById('stock-luxuryGift').value = stocks.luxuryGift;
+            }
+
+            // 2. クラフト可能数の計算
+            // 30%回復: 紙 1個 + 嗜好品の詰め合わせ 1個
+            const craft30Possible = Math.min(
+                Math.floor(stocks.paper / 1),
+                Math.floor(stocks.normalGift / 1)
+            );
+
+            // 50%回復: 紙 2個 + 高級嗜好品の詰め合わせ 1個
+            const craft50Possible = Math.min(
+                Math.floor(stocks.paper / 2),
+                Math.floor(stocks.luxuryGift / 1)
+            );
+
+            // 3. クラフト可能数テキストの表示
+            document.getElementById('craftable-30').innerText = craft30Possible;
+            document.getElementById('craftable-50').innerText = craft50Possible;
+
+            // 4. ボタンの有効/無効化
+            document.getElementById('btn-craft-30').disabled = craft30Possible <= 0;
+            document.getElementById('btn-craft-50').disabled = craft50Possible <= 0;
+
+            // 5. ボトルネック/素材充足状況の可視化
+            updateRequirementStatus('req-30-paper', stocks.paper >= 1, stocks.paper, 1);
+            updateRequirementStatus('req-30-normal', stocks.normalGift >= 1, stocks.normalGift, 1);
+
+            updateRequirementStatus('req-50-paper', stocks.paper >= 2, stocks.paper, 2);
+            updateRequirementStatus('req-50-luxury', stocks.luxuryGift >= 1, stocks.luxuryGift, 1);
+        }
+
+        // 各素材の不足状態を表示する補助関数
+        function updateRequirementStatus(elementId, isEnough, currentStock, requiredPerItem) {
+            const el = document.getElementById(elementId);
+            const statusEl = el.querySelector('.stock-status');
+
+            if (isEnough) {
+                statusEl.className = 'stock-status font-bold text-emerald-400';
+                statusEl.innerText = `OK (所持: ${currentStock})`;
+            } else {
+                statusEl.className = 'stock-status font-bold text-rose-400';
+                statusEl.innerText = `不足 (所持: ${currentStock}/${requiredPerItem})`;
+            }
+        }
+
+        // クラフト（素材の消費）処理
+        function craftItem(type) {
+            let amountInputId, paperCost, normalCost, luxuryCost, itemName;
+
+            if (type === 'craft30') {
+                amountInputId = 'craft-amount-30';
+                paperCost = 1;
+                normalCost = 1;
+                luxuryCost = 0;
+                itemName = '30%回復';
+            } else if (type === 'craft50') {
+                amountInputId = 'craft-amount-50';
+                paperCost = 2;
+                normalCost = 0;
+                luxuryCost = 1;
+                itemName = '50%回復';
+            }
+
+            const amountInput = document.getElementById(amountInputId);
+            let count = parseInt(amountInput.value, 10);
+
+            if (isNaN(count) || count <= 0) {
+                count = 1;
+                amountInput.value = 1;
+            }
+
+            const totalPaperReq = paperCost * count;
+            const totalNormalReq = normalCost * count;
+            const totalLuxuryReq = luxuryCost * count;
+
+            // 素材確認
+            if (stocks.paper < totalPaperReq || stocks.normalGift < totalNormalReq || stocks.luxuryGift < totalLuxuryReq) {
+                showToast(`素材が足りません！ (${itemName} ${count}個の作成には素材が不足しています)`, 'error');
+                return;
+            }
+
+            // 在庫減算
+            stocks.paper -= totalPaperReq;
+            stocks.normalGift -= totalNormalReq;
+            stocks.luxuryGift -= totalLuxuryReq;
+
+            saveStock();
+            updateUI();
+
+            showToast(`${itemName} を ${count}個 製作し、素材を消費しました！`, 'success');
+        }
+
+        // 全在庫リセット機能
+        function resetAllStock() {
+            if (stocks.paper === 0 && stocks.normalGift === 0 && stocks.luxuryGift === 0) {
+                showToast('在庫は既に0です', 'info');
+                return;
+            }
+            
+            stocks.paper = 0;
+            stocks.normalGift = 0;
+            stocks.luxuryGift = 0;
+
+            saveStock();
+            updateUI();
+            showToast('すべての在庫数をリセットしました', 'info');
+        }
+
+        // 簡易トースト通知を表示
+        let toastTimeout;
+        function showToast(message, type) {
+            const toast = document.getElementById('toast-message');
+            toast.innerText = message;
+            toast.classList.remove('hidden', 'bg-emerald-900/50', 'border-emerald-500', 'text-emerald-200', 'bg-rose-900/50', 'border-rose-500', 'text-rose-200', 'bg-slate-800', 'border-slate-600', 'text-slate-200');
+
+            if (type === 'success') {
+                toast.classList.add('bg-emerald-900/50', 'border-emerald-500', 'text-emerald-200');
+            } else if (type === 'error') {
+                toast.classList.add('bg-rose-900/50', 'border-rose-500', 'text-rose-200');
+            } else {
+                toast.classList.add('bg-slate-800', 'border-slate-600', 'text-slate-200');
+            }
+
+            clearTimeout(toastTimeout);
+            toast.classList.remove('hidden');
+
+            toastTimeout = setTimeout(() => {
+                toast.classList.add('hidden');
+            }, 3000);
+        }
+    </script>
+</body>
+</html>
